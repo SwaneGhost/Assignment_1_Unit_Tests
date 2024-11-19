@@ -31,6 +31,9 @@ public class TestLibrary {
         library = new Library(databaseService, reviewService);
     }
 
+    /**
+     * Tests for the addBook method.
+     */
     @Nested
     class AddBookTests {
         @Test
@@ -287,7 +290,9 @@ public class TestLibrary {
         }
     }
 
-
+    /**
+     * Tests for the borrowBook method.
+     */
     @Nested
     class BorrowBookTests {
 
@@ -359,12 +364,11 @@ public class TestLibrary {
     }
 
 
-
     //TODO: TEST returnBook METHOD
 
-        //TODO: TEST notifyUserWithBookReviews METHOD
+    //TODO: TEST notifyUserWithBookReviews METHOD
 
-        //TODO: TEST getBookByISBN METHOD
+    //TODO: TEST getBookByISBN METHOD -- Denis
 
 
 }
