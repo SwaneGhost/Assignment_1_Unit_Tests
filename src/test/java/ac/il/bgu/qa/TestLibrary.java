@@ -40,6 +40,7 @@ public class TestLibrary {
         public void GivenNull_WhenAddBook_ThenIllegalArgumentException() {
             IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.addBook(null));
             Assertions.assertEquals("Invalid book.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).addBook(Mockito.anyString(), Mockito.any(Book.class));
         }
 
         @Test
@@ -47,6 +48,7 @@ public class TestLibrary {
             Mockito.when(mockBook.getISBN()).thenReturn(null);
             IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.addBook(mockBook));
             Assertions.assertEquals("Invalid ISBN.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).addBook(Mockito.anyString(), Mockito.any(Book.class));
         }
 
         @Test
@@ -54,6 +56,7 @@ public class TestLibrary {
             Mockito.when(mockBook.getISBN()).thenReturn("978-3-16-148410-0A");
             IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.addBook(mockBook));
             Assertions.assertEquals("Invalid ISBN.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).addBook(Mockito.anyString(), Mockito.any(Book.class));
         }
 
         @Test
@@ -61,6 +64,7 @@ public class TestLibrary {
             Mockito.when(mockBook.getISBN()).thenReturn("978-3-16-148410-0@");
             IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.addBook(mockBook));
             Assertions.assertEquals("Invalid ISBN.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).addBook(Mockito.anyString(), Mockito.any(Book.class));
         }
 
         @Test
@@ -68,6 +72,7 @@ public class TestLibrary {
             Mockito.when(mockBook.getISBN()).thenReturn("978-3-16-148410-1");
             IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.addBook(mockBook));
             Assertions.assertEquals("Invalid ISBN.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).addBook(Mockito.anyString(), Mockito.any(Book.class));
         }
 
         @Test
@@ -75,6 +80,14 @@ public class TestLibrary {
             Mockito.when(mockBook.getISBN()).thenReturn("978-3-16-148410-01");
             IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.addBook(mockBook));
             Assertions.assertEquals("Invalid ISBN.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).addBook(Mockito.anyString(), Mockito.any(Book.class));
+        }
+
+        @Test void GivenBookISBNwithNonDigits_WhenAddBook_ThenIllegalArgumentException() {
+            Mockito.when(mockBook.getISBN()).thenReturn("978-3-16-184A10-0");
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.addBook(mockBook));
+            Assertions.assertEquals("Invalid ISBN.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).addBook(Mockito.anyString(), Mockito.any(Book.class));
         }
 
         @Nested
@@ -89,6 +102,7 @@ public class TestLibrary {
                 Mockito.when(mockBook.getTitle()).thenReturn(null);
                 IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.addBook(mockBook));
                 Assertions.assertEquals("Invalid title.", exception.getMessage());
+                Mockito.verify(databaseService, Mockito.never()).addBook(Mockito.anyString(), Mockito.any(Book.class));
             }
 
             @Test
@@ -96,6 +110,7 @@ public class TestLibrary {
                 Mockito.when(mockBook.getTitle()).thenReturn("");
                 IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.addBook(mockBook));
                 Assertions.assertEquals("Invalid title.", exception.getMessage());
+                Mockito.verify(databaseService, Mockito.never()).addBook(Mockito.anyString(), Mockito.any(Book.class));
             }
         }
 
@@ -112,6 +127,7 @@ public class TestLibrary {
                 Mockito.when(mockBook.getAuthor()).thenReturn(null);
                 IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.addBook(mockBook));
                 Assertions.assertEquals("Invalid author.", exception.getMessage());
+                Mockito.verify(databaseService, Mockito.never()).addBook(Mockito.anyString(), Mockito.any(Book.class));
             }
 
             @Test
@@ -119,6 +135,7 @@ public class TestLibrary {
                 Mockito.when(mockBook.getAuthor()).thenReturn("");
                 IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.addBook(mockBook));
                 Assertions.assertEquals("Invalid author.", exception.getMessage());
+                Mockito.verify(databaseService, Mockito.never()).addBook(Mockito.anyString(), Mockito.any(Book.class));
             }
 
             @Test
@@ -126,6 +143,7 @@ public class TestLibrary {
                 Mockito.when(mockBook.getAuthor()).thenReturn("1author");
                 IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.addBook(mockBook));
                 Assertions.assertEquals("Invalid author.", exception.getMessage());
+                Mockito.verify(databaseService, Mockito.never()).addBook(Mockito.anyString(), Mockito.any(Book.class));
             }
 
             @Test
@@ -133,20 +151,35 @@ public class TestLibrary {
                 Mockito.when(mockBook.getAuthor()).thenReturn("author1");
                 IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.addBook(mockBook));
                 Assertions.assertEquals("Invalid author.", exception.getMessage());
+                Mockito.verify(databaseService, Mockito.never()).addBook(Mockito.anyString(), Mockito.any(Book.class));
             }
 
             @Test
-            public void GivenBookAuthorNameContainsSpecialCharacters_WhenAddBook_ThenIllegalArgumentException() {
-                Mockito.when(mockBook.getAuthor()).thenReturn("author@");
+            public void GivenBookAuthorNameContainsIllegalCharacters_WhenAddBook_ThenIllegalArgumentException() {
+                Mockito.when(mockBook.getAuthor()).thenReturn("autho@r");
                 IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.addBook(mockBook));
                 Assertions.assertEquals("Invalid author.", exception.getMessage());
+                Mockito.verify(databaseService, Mockito.never()).addBook(Mockito.anyString(), Mockito.any(Book.class));
             }
 
             @Test
-            public void GivenBookAuthorNameConsecutiveBackslashes_WhenAddBook_ThenIllegalArgumentException() {
-                Mockito.when(mockBook.getAuthor()).thenReturn("author\\");
+            public void GivenBookAuthorNameConsecutiveSpecialChar_WhenAddBook_ThenIllegalArgumentException() {
+                Mockito.when(mockBook.getAuthor()).thenReturn("author--ms");
                 IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.addBook(mockBook));
                 Assertions.assertEquals("Invalid author.", exception.getMessage());
+                Mockito.when(mockBook.getAuthor()).thenReturn("author" +'\'' + '\'' + "ms");
+                exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.addBook(mockBook));
+                Assertions.assertEquals("Invalid author.", exception.getMessage());
+                Mockito.verify(databaseService, Mockito.never()).addBook(Mockito.anyString(), Mockito.any(Book.class));
+            }
+
+            //test for successfully adding a book
+            @Test
+            public void GivenCorrectBook_WhenAddBook_ThenBookAdded() {
+                Mockito.when(mockBook.getAuthor()).thenReturn("author");
+                Mockito.when(mockBook.isBorrowed()).thenReturn(false);
+                library.addBook(mockBook);
+                Mockito.verify(databaseService).addBook(mockBook.getISBN(), mockBook);
             }
         }
 
@@ -158,6 +191,7 @@ public class TestLibrary {
             Mockito.when(mockBook.isBorrowed()).thenReturn(true);
             IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.addBook(mockBook));
             Assertions.assertEquals("Book with invalid borrowed state.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).addBook(Mockito.anyString(), Mockito.any(Book.class));
         }
 
         @Test
@@ -169,17 +203,7 @@ public class TestLibrary {
             Mockito.when(databaseService.getBookByISBN(mockBook.getISBN())).thenReturn(mockBook);
             IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.addBook(mockBook));
             Assertions.assertEquals("Book already exists.", exception.getMessage());
-        }
-
-        @Test
-        public void GivenBookCorrectly_WhenAddBook_ThenBookAdded() {
-            Mockito.when(mockBook.getISBN()).thenReturn("978-3-16-148410-0");
-            Mockito.when(mockBook.getTitle()).thenReturn("title");
-            Mockito.when(mockBook.getAuthor()).thenReturn("author");
-            Mockito.when(mockBook.isBorrowed()).thenReturn(false);
-            Mockito.when(databaseService.getBookByISBN(mockBook.getISBN())).thenReturn(null);
-            library.addBook(mockBook);
-            Mockito.verify(databaseService).addBook(mockBook.getISBN(), mockBook);
+            Mockito.verify(databaseService, Mockito.never()).addBook(Mockito.anyString(), Mockito.any(Book.class));
         }
     }
 
@@ -293,8 +317,9 @@ public class TestLibrary {
     /**
      * Tests for the borrowBook method.
      */
+
     @Nested
-    class BorrowBookTests {
+    class borrowBookTests {
 
         @BeforeEach
         public void setUp() {
@@ -307,32 +332,36 @@ public class TestLibrary {
         public void GivenNullISBN_WhenBorrowBook_ThenIllegalArgumentException() {
             IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.borrowBook(null, "user"));
             Assertions.assertEquals("Invalid ISBN.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).borrowBook(Mockito.anyString(), Mockito.anyString());
         }
-
 
         @Test
         public void GivenNonExistentBook_WhenBorrowBook_ThenBookNotFoundException() {
             Mockito.when(databaseService.getBookByISBN("978-3-16-148410-0")).thenReturn(null);
             BookNotFoundException exception = Assertions.assertThrows(BookNotFoundException.class, () -> library.borrowBook("978-3-16-148410-0", "user"));
             Assertions.assertEquals("Book not found!", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).borrowBook(Mockito.anyString(), Mockito.anyString());
         }
 
         @Test
         public void GivenNullUser_WhenBorrowBook_ThenIllegalArgumentException() {
             IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.borrowBook("978-3-16-148410-0", null));
             Assertions.assertEquals("Invalid user Id.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).borrowBook(Mockito.anyString(), Mockito.anyString());
         }
 
         @Test
         public void GivenNullUserId_WhenBorrowBook_ThenIllegalArgumentException() {
             IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.borrowBook("978-3-16-148410-0", "user1"));
             Assertions.assertEquals("Invalid user Id.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).borrowBook(Mockito.anyString(), Mockito.anyString());
         }
 
         @Test
         public void GivenNot12DigitUserId_WhenBorrowBook_ThenIllegalArgumentException() {
             IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.borrowBook("978-3-16-148410-0", "user"));
             Assertions.assertEquals("Invalid user Id.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).borrowBook(Mockito.anyString(), Mockito.anyString());
         }
 
         @Test
@@ -340,6 +369,7 @@ public class TestLibrary {
             Mockito.when(databaseService.getUserById("123456789123")).thenReturn(null);
             UserNotRegisteredException exception = Assertions.assertThrows(UserNotRegisteredException.class, () -> library.borrowBook("978-3-16-148410-0", "123456789123"));
             Assertions.assertEquals("User not found!", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).borrowBook(Mockito.anyString(), Mockito.anyString());
         }
 
         @Test
@@ -348,27 +378,66 @@ public class TestLibrary {
             Mockito.when(databaseService.getUserById("123456789123")).thenReturn(mockUser);
             BookAlreadyBorrowedException exception = Assertions.assertThrows(BookAlreadyBorrowedException.class, () -> library.borrowBook("978-3-16-148410-0", "123456789123"));
             Assertions.assertEquals("Book is already borrowed!", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).borrowBook(Mockito.anyString(), Mockito.anyString());
         }
 
-        //borrow a book successfully and then attempt to borrow the same book again
         @Test
-        public void GivenUserTriedToBorrowedBookAgain_WhenBorrowBook_ThenBookAlreadyBorrowedException() {
+        public void GivenUserTriedToBorrowBookAgain_WhenBorrowBook_ThenBookAlreadyBorrowedException() {
             Mockito.when(mockBook.isBorrowed()).thenReturn(false);
             Mockito.when(databaseService.getUserById("123456789123")).thenReturn(mockUser);
             library.borrowBook("978-3-16-148410-0", "123456789123");
             Mockito.when(mockBook.isBorrowed()).thenReturn(true);
             BookAlreadyBorrowedException exception = Assertions.assertThrows(BookAlreadyBorrowedException.class, () -> library.borrowBook("978-3-16-148410-0", "123456789123"));
             Assertions.assertEquals("Book is already borrowed!", exception.getMessage());
-        }
-
+            Mockito.verify(databaseService, Mockito.times(1)).borrowBook(Mockito.anyString(), Mockito.anyString());        }
     }
 
+    /**
+     * Tests for the returnBook method.
+     */
+    @Nested
+    class returnBookTests {
 
-    //TODO: TEST returnBook METHOD
+        @BeforeEach
+        public void setUp() {
+            Mockito.when(databaseService.getBookByISBN("978-3-16-148410-0")).thenReturn(mockBook);
+            Mockito.when(mockBook.isBorrowed()).thenReturn(true);
+        }
 
-    //TODO: TEST notifyUserWithBookReviews METHOD
+        @Test
+        public void GivenNullISBN_WhenReturnBook_ThenIllegalArgumentException() {
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.returnBook(null));
+            Assertions.assertEquals("Invalid ISBN.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).returnBook(Mockito.anyString());
+        }
 
-    //TODO: TEST getBookByISBN METHOD -- Denis
+        @Test
+        public void GivenNonExistentBook_WhenReturnBook_ThenBookNotFoundException() {
+            Mockito.when(databaseService.getBookByISBN("978-3-16-148410-0")).thenReturn(null);
+            BookNotFoundException exception = Assertions.assertThrows(BookNotFoundException.class, () -> library.returnBook("978-3-16-148410-0"));
+            Assertions.assertEquals("Book not found!", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).returnBook(Mockito.anyString());
+        }
+
+        @Test
+        public void GivenBookNotBorrowed_WhenReturnBook_ThenBookNotBorrowedException() {
+            Mockito.when(mockBook.isBorrowed()).thenReturn(false);
+            BookNotBorrowedException exception = Assertions.assertThrows(BookNotBorrowedException.class, () -> library.returnBook("978-3-16-148410-0"));
+            Assertions.assertEquals("Book wasn't borrowed!", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).returnBook(Mockito.anyString());
+        }
+
+        @Test
+        public void GivenCorrectBook_WhenReturnBook_ThenBookReturned() {
+            Mockito.when(mockBook.isBorrowed()).thenReturn(true);
+            library.returnBook("978-3-16-148410-0");
+            Mockito.verify(databaseService).returnBook("978-3-16-148410-0");
+        }
+    }
+
+        //TODO: TEST notifyUserWithBookReviews METHOD
+
+        //TODO: TEST getBookByISBN METHOD -- Denis
 
 
 }
