@@ -23,6 +23,9 @@ public class TestLibrary {
     @Mock
     private Book mockBook;
 
+    @Mock
+    private User mockUser;
+
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
@@ -189,11 +192,86 @@ public class TestLibrary {
             Mockito.when(user.getNotificationService()).thenReturn(Mockito.mock(NotificationService.class));
         }
 
+
         @Test
         public void GivenNullUser_WhenRegisterUser_ThenRaiseIllegalArgumentException() {
             IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.registerUser(null));
             Assertions.assertEquals("Invalid user.", exception.getMessage());
         }
+
+
+
+    @Nested
+    class BorrowBookTests {
+
+        @Test
+        public void GivenNullISBN_WhenBorrowBook_ThenIllegalArgumentException() {
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.borrowBook(null, "user"));
+            Assertions.assertEquals("Invalid ISBN.", exception.getMessage());
+        }
+
+        @BeforeEach
+        public void setUp() {
+            Mockito.when(databaseService.getBookByISBN("978-3-16-148410-0")).thenReturn(mockBook);
+            Mockito.when(databaseService.getUserById("user")).thenReturn(mockUser);
+            Mockito.when(mockBook.isBorrowed()).thenReturn(false);
+        }
+        @Test
+        public void GivenNonExistentBook_WhenBorrowBook_ThenBookNotFoundException() {
+            Mockito.when(databaseService.getBookByISBN("978-3-16-148410-0")).thenReturn(null);
+            BookNotFoundException exception = Assertions.assertThrows(BookNotFoundException.class, () -> library.borrowBook("978-3-16-148410-0", "user"));
+            Assertions.assertEquals("Book not found!", exception.getMessage());
+        }
+
+        @Test
+        public void GivenNullUser_WhenBorrowBook_ThenIllegalArgumentException() {
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.borrowBook("978-3-16-148410-0", null));
+            Assertions.assertEquals("Invalid user Id.", exception.getMessage());
+        }
+
+        @Test
+        public void GivenNullUserId_WhenBorrowBook_ThenIllegalArgumentException() {
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.borrowBook("978-3-16-148410-0", "user1"));
+            Assertions.assertEquals("Invalid user Id.", exception.getMessage());
+        }
+
+        @Test
+        public void GivenNot12DigitUserId_WhenBorrowBook_ThenIllegalArgumentException() {
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.borrowBook("978-3-16-148410-0", "user"));
+            Assertions.assertEquals("Invalid user Id.", exception.getMessage());
+        }
+
+        @Test
+        public void GivenUnregisteredUser_WhenBorrowBook_ThenUserNotFoundException() {
+            Mockito.when(databaseService.getUserById("123456789123")).thenReturn(null);
+            UserNotRegisteredException exception = Assertions.assertThrows(UserNotRegisteredException.class, () -> library.borrowBook("978-3-16-148410-0", "123456789123"));
+            Assertions.assertEquals("User not found!", exception.getMessage());
+        }
+
+        @Test
+        public void GivenUserAlreadyBorrowedBook_WhenBorrowBook_ThenBookAlreadyBorrowedException() {
+            Mockito.when(mockBook.isBorrowed()).thenReturn(true);
+            Mockito.when(databaseService.getUserById("123456789123")).thenReturn(mockUser);
+            BookAlreadyBorrowedException exception = Assertions.assertThrows(BookAlreadyBorrowedException.class, () -> library.borrowBook("978-3-16-148410-0", "123456789123"));
+            Assertions.assertEquals("Book is already borrowed!", exception.getMessage());
+        }
+
+        //borrow a book successfully and then attempt to borrow the same book again
+        @Test
+        public void GivenUserTriedToBorrowedBookAgain_WhenBorrowBook_ThenBookAlreadyBorrowedException() {
+            Mockito.when(mockBook.isBorrowed()).thenReturn(false);
+            Mockito.when(databaseService.getUserById("123456789123")).thenReturn(mockUser);
+            library.borrowBook("978-3-16-148410-0", "123456789123");
+            Mockito.when(mockBook.isBorrowed()).thenReturn(true);
+            BookAlreadyBorrowedException exception = Assertions.assertThrows(BookAlreadyBorrowedException.class, () -> library.borrowBook("978-3-16-148410-0", "123456789123"));
+            Assertions.assertEquals("Book is already borrowed!", exception.getMessage());
+        }
+
+    }
+
+
+    //TODO: TEST returnBook METHOD
+
 
         @Test
         public void GivenUserWithNullId_WhenRegisterUser_ThenRaiseIllegalArgumentException() {
