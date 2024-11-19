@@ -175,15 +175,98 @@ public class TestLibrary {
         Mockito.verify(databaseService).addBook(mockBook.getISBN(), mockBook);
     }
 
+    @Nested
+    class registerUserTests {
 
-    //TODO: TEST registerUser METHOD
+        @Mock
+        User user;
 
-    //TODO: TEST borrowBook METHOD
+        @BeforeEach
+        public void setUp() {
+            user = Mockito.mock(User.class);
+            Mockito.when(user.getId()).thenReturn("123456789876");
+            Mockito.when(user.getName()).thenReturn("name");
+            Mockito.when(user.getNotificationService()).thenReturn(Mockito.mock(NotificationService.class));
+        }
 
-    //TODO: TEST returnBook METHOD
+        @Test
+        public void GivenNullUser_WhenRegisterUser_ThenRaiseIllegalArgumentException() {
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.registerUser(null));
+            Assertions.assertEquals("Invalid user.", exception.getMessage());
+        }
 
-    //TODO: TEST notifyUserWithBookReviews METHOD
+        @Test
+        public void GivenUserWithNullId_WhenRegisterUser_ThenRaiseIllegalArgumentException() {
+            Mockito.when(user.getId()).thenReturn(null);
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.registerUser(user));
+            Assertions.assertEquals("Invalid user Id.", exception.getMessage());
+        }
 
-    //TODO: TEST getBookByISBN METHOD
+        @Test
+        public void GivenUserWithIncorrectIdLength_WhenRegisterUser_ThenRaiseIllegalArgumentException() {
+
+            // Length 11
+            Mockito.when(user.getId()).thenReturn("12345678987");
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.registerUser(user));
+            Assertions.assertEquals("Invalid user Id.", exception.getMessage());
+
+            // Length 13
+            Mockito.when(user.getId()).thenReturn("1234567898765");
+            exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.registerUser(user));
+            Assertions.assertEquals("Invalid user Id.", exception.getMessage());
+        }
+
+        @Test
+        public void GivenUserWithIncorrectIdFormat_WhenRegisterUser_ThenRaiseIllegalArgumentException() {
+
+            // Contains a letter
+            Mockito.when(user.getId()).thenReturn("12345678bBaA");
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.registerUser(user));
+            Assertions.assertEquals("Invalid user Id.", exception.getMessage());
+
+            // Contains a special character
+            Mockito.when(user.getId()).thenReturn("1234567898>?!@");
+            exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.registerUser(user));
+            Assertions.assertEquals("Invalid user Id.", exception.getMessage());
+        }
+
+        @Test
+        public void GivenUserWithNullName_WhenRegisterUser_ThenRaiseIllegalArgumentException() {
+            Mockito.when(user.getName()).thenReturn(null);
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.registerUser(user));
+            Assertions.assertEquals("Invalid user name.", exception.getMessage());
+        }
+
+        @Test
+        public void GivenUserWithEmptyName_WhenRegisterUser_ThenRaiseIllegalArgumentException() {
+            Mockito.when(user.getName()).thenReturn("");
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.registerUser(user));
+            Assertions.assertEquals("Invalid user name.", exception.getMessage());
+        }
+
+        @Test
+        public void GivenUserWithNullNotificationService_WhenRegisterUser_ThenRaiseIllegalArgumentException() {
+            Mockito.when(user.getNotificationService()).thenReturn(null);
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.registerUser(user));
+            Assertions.assertEquals("Invalid notification service.", exception.getMessage());
+        }
+
+        @Test
+        public void GivenExistingUser_WhenRegisterUser_ThenRaiseIllegalArgumentException() {
+            Mockito.when(user.getId()).thenReturn("123456789876");
+            Mockito.when(databaseService.getUserById(user.getId())).thenReturn(user);
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.registerUser(user));
+            Assertions.assertEquals("User already exists.", exception.getMessage());
+        }
+
+    }
+        //TODO: TEST borrowBook METHOD
+
+        //TODO: TEST returnBook METHOD
+
+        //TODO: TEST notifyUserWithBookReviews METHOD
+
+        //TODO: TEST getBookByISBN METHOD
+
 
 }
