@@ -6,9 +6,12 @@ import org.junit.jupiter.api.*;
 
 import org.mockito.*;
 
-public class TestLibrary {
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.List;
 
-    //TODO: CHECK WITH THE INSTRUCTOR IF IT IS CORRECT TO CHECK SPECIFIC EXCEPTION MESSAGES IN OUR TESTS
+public class TestLibrary {
 
     @Mock
     private DatabaseService databaseService;
@@ -215,8 +218,7 @@ public class TestLibrary {
     class registerUserTests {
 
         @BeforeEach
-        public void setUp() {
-            mockUser = Mockito.mock(User.class);
+        public void setUp() {;
             // Valid user
             Mockito.when(mockUser.getId()).thenReturn("123456789876");
             Mockito.when(mockUser.getName()).thenReturn("name");
@@ -435,9 +437,339 @@ public class TestLibrary {
         }
     }
 
-        //TODO: TEST notifyUserWithBookReviews METHOD
+    /**
+     * Tests for the notifyUserWithBookReviews method.
+     */
+    @Nested
+    class notifyUserWithBookReviewsTests {
+        // Tests to verify ISBN is checked before an attempt to get it from DB ************************************************
 
-        //TODO: TEST getBookByISBN METHOD -- Denis
+        @Spy
+        List<String> reviews = new ArrayList<>();
 
+        @BeforeEach
+        public void setUp() {
+            reviews.add("review1");
+            reviews.add("review2");
+            reviews.add("review3");
+            Mockito.when(mockBook.getTitle()).thenReturn("title");
+            Mockito.when(databaseService.getBookByISBN("978-316148-4100")).thenReturn(mockBook);
+            Mockito.when(databaseService.getUserById("123456789876")).thenReturn(mockUser);
+            Mockito.when(reviewService.getReviewsForBook("978-316148-4100")).thenReturn(reviews);
+        }
+
+        @Test
+        public void GivenNullISBN_WhenNotifyUserWithBookReviewsTests_ThenIllegalArgumentException() {
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.notifyUserWithBookReviews(null, "123456789876"));
+            Assertions.assertEquals("Invalid ISBN.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).getBookByISBN(Mockito.anyString());
+        }
+
+        @Test
+        public void GivenBookISBNWithLetters_WhenNotifyUserWithBookReviewsTests_ThenIllegalArgumentException() {
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.notifyUserWithBookReviews("978-3-16-148410-0A", "123456789876"));
+            Assertions.assertEquals("Invalid ISBN.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).getBookByISBN(Mockito.anyString());
+        }
+
+        @Test
+        public void GivenBookISBNwithSpecialCharacters_WhenNotifyUserWithBookReviewsTests_ThenIllegalArgumentException() {
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.notifyUserWithBookReviews("978-3-16-148410-0@", "123456789876"));
+            Assertions.assertEquals("Invalid ISBN.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).getBookByISBN(Mockito.anyString());
+        }
+
+        @Test
+        public void GivenBookISBNincorrectCheckSum_WhenNotifyUserWithBookReviewsTests_ThenIllegalArgumentException() {
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.notifyUserWithBookReviews("978-3-16-148410-1", "123456789876"));
+            Assertions.assertEquals("Invalid ISBN.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).getBookByISBN(Mockito.anyString());
+        }
+
+        @Test
+        public void GivenBookISBNWrongLength_WhenNotifyUserWithBookReviewsTests_ThenIllegalArgumentException() {
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.notifyUserWithBookReviews("978-3-16-148410-01", "123456789876"));
+            Assertions.assertEquals("Invalid ISBN.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).getBookByISBN(Mockito.anyString());
+        }
+
+        @Test
+        void GivenBookISBNWithNonDigits_WhenNotifyUserWithBookReviewsTests_ThenIllegalArgumentException() {
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.notifyUserWithBookReviews("978-3-16-184A10-0", "123456789876"));
+            Assertions.assertEquals("Invalid ISBN.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).getBookByISBN(Mockito.anyString());
+        }
+
+        //********************************************************************************************************************
+
+        // Tests to verify user is checked ************************************************************************************
+        @Test
+        public void GivenNullUserId_WhenNotifyUserWithBookReviewsTests_ThenRaiseIllegalArgumentException() {
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.notifyUserWithBookReviews("978-316148-4100", null));
+            Assertions.assertEquals("Invalid user Id.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).getBookByISBN(Mockito.anyString());
+        }
+
+        @Test
+        public void GivenUserWithIncorrectIdLength_WhenNotifyUserWithBookReviewsTests_ThenRaiseIllegalArgumentException() {
+
+            // Length 11
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.notifyUserWithBookReviews("978-316148-4100", "12345678987"));
+            Assertions.assertEquals("Invalid user Id.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).getBookByISBN(Mockito.anyString());
+
+            // Length 13
+            exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.notifyUserWithBookReviews("978-316148-4100", "1234567898765"));
+            Assertions.assertEquals("Invalid user Id.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).getBookByISBN(Mockito.anyString());
+        }
+
+        @Test
+        public void GivenUserWithIncorrectIdFormat_WhenNotifyUserWithBookReviewsTests_ThenRaiseIllegalArgumentException() {
+
+            // Contains a letter
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.notifyUserWithBookReviews("978-316148-4100", "12345678bBaA"));
+            Assertions.assertEquals("Invalid user Id.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).getBookByISBN(Mockito.anyString());
+
+            // Contains a special character
+            exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.notifyUserWithBookReviews("978-316148-4100", "1234567898>?!@"));
+            Assertions.assertEquals("Invalid user Id.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).getBookByISBN(Mockito.anyString());
+        }
+
+        //********************************************************************************************************************
+
+        @Test
+        public void GivenValidISBNAndUserAndNonExistantBook_WhenNotifyUserWithBookReviews_ThenBookNotFoundException() {
+            Mockito.when(databaseService.getBookByISBN("978-316148-4100")).thenReturn(null);
+            BookNotFoundException exception = Assertions.assertThrows(BookNotFoundException.class, () -> library.notifyUserWithBookReviews("978-316148-4100", "123456789876"));
+            Assertions.assertEquals("Book not found!", exception.getMessage());
+            Mockito.verify(databaseService).getBookByISBN("978-316148-4100");
+        }
+
+        @Test
+        public void GivenValidISBNAndUserAndBookAndNonExistantUser_WhenNotifyUserWithBookReviews_ThenUserNotFoundException() {
+            Mockito.when(databaseService.getUserById(Mockito.anyString())).thenReturn(null);
+            UserNotRegisteredException exception = Assertions.assertThrows(UserNotRegisteredException.class, () -> library.notifyUserWithBookReviews("978-316148-4100", "123456789876"));
+            Assertions.assertEquals("User not found!", exception.getMessage());
+            Mockito.verify(databaseService).getBookByISBN("978-316148-4100");
+            Mockito.verify(databaseService).getUserById("123456789876");
+        }
+
+        @Test
+        public void GivenValidParametersAndNullReviews_WhenNotifyUserWithBookReviews_ThenNoReviewsException() {
+            Mockito.when(reviewService.getReviewsForBook("978-316148-4100")).thenReturn(null);
+            NoReviewsFoundException exception = Assertions.assertThrows(NoReviewsFoundException.class, () -> library.notifyUserWithBookReviews("978-316148-4100", "123456789876"));
+            Assertions.assertEquals("No reviews found!", exception.getMessage());
+            Mockito.verify(databaseService).getBookByISBN("978-316148-4100");
+            Mockito.verify(databaseService).getUserById("123456789876");
+            Mockito.verify(reviewService).close();
+        }
+
+        @Test
+        public void GivenValidParametersAndEmptyReviews_WhenNotifyUserWithBookReviews_ThenNoReviewsException() {
+            reviews.clear();
+            NoReviewsFoundException exception = Assertions.assertThrows(NoReviewsFoundException.class, () -> library.notifyUserWithBookReviews("978-316148-4100", "123456789876"));
+            Assertions.assertEquals("No reviews found!", exception.getMessage());
+            Mockito.verify(databaseService).getBookByISBN("978-316148-4100");
+            Mockito.verify(databaseService).getUserById("123456789876");
+            Mockito.verify(reviewService).getReviewsForBook("978-316148-4100");
+            Mockito.verify(reviewService).close();
+        }
+
+        @Test
+        public void GivenValidParametersAndUnavailableReviewService_WhenNotifyUserWithBookReviews_ThenReviewException() {
+            Mockito.when(reviewService.getReviewsForBook("978-316148-4100")).thenThrow(ReviewException.class);
+            ReviewServiceUnavailableException exception = Assertions.assertThrows(ReviewServiceUnavailableException.class, () -> library.notifyUserWithBookReviews("978-316148-4100", "123456789876"));
+            Assertions.assertEquals("Review service unavailable!", exception.getMessage());
+            Mockito.verify(databaseService).getBookByISBN("978-316148-4100");
+            Mockito.verify(databaseService).getUserById("123456789876");
+            Mockito.verify(reviewService).getReviewsForBook("978-316148-4100");
+            Mockito.verify(reviewService).close();
+        }
+
+        @Test
+        public void GivenValidParametersAndInactiveNotificationService_WhenNotifyUserWithBookReviews_ThenNotificationExceptionAnd5ErrPrints() {
+            // Set err output to check the error message
+            ByteArrayOutputStream errContent = new ByteArrayOutputStream();
+            PrintStream originalErr = System.err;
+            System.setErr(new PrintStream(errContent));
+
+            Mockito.doThrow(NotificationException.class).when(mockUser).sendNotification(Mockito.anyString());
+            NotificationException exception = Assertions.assertThrows(NotificationException.class, () -> library.notifyUserWithBookReviews("978-316148-4100", "123456789876"));
+            Assertions.assertEquals("Notification failed!", exception.getMessage());
+            Mockito.verify(databaseService).getBookByISBN("978-316148-4100");
+            Mockito.verify(databaseService).getUserById("123456789876");
+            Mockito.verify(reviewService).getReviewsForBook("978-316148-4100");
+            Mockito.verify(mockUser, Mockito.times(5)).sendNotification("Reviews for '" + mockBook.getTitle() + "':\n" + String.join("\n", reviews));
+            Mockito.verify(reviewService).close();
+            Assertions.assertTrue(errContent.toString().replace("\r","").contains("Notification failed! Retrying attempt 1/5\n" +
+                    "Notification failed! Retrying attempt 2/5\n" +
+                    "Notification failed! Retrying attempt 3/5\n" +
+                    "Notification failed! Retrying attempt 4/5\n" +
+                    "Notification failed! Retrying attempt 5/5\n"));
+            // Reset err output
+            System.setErr(originalErr);
+        }
+
+        @Test
+        public void GivenValidParametersAndNotificationServiceThatFailsTwice_WhenNotifyUserWithBookReviews_ThenTwoErrPrintsAndReviewsSent() {
+            // Set err output to check the error message
+            ByteArrayOutputStream errContent = new ByteArrayOutputStream();
+            PrintStream originalErr = System.err;
+            System.setErr(new PrintStream(errContent));
+
+            Mockito.doThrow(NotificationException.class)
+                    .doThrow(NotificationException.class)
+                    .doNothing()
+                    .when(mockUser).sendNotification(Mockito.anyString());
+
+            library.notifyUserWithBookReviews("978-316148-4100", "123456789876");
+
+            Mockito.verify(databaseService).getBookByISBN("978-316148-4100");
+            Mockito.verify(databaseService).getUserById("123456789876");
+            Mockito.verify(reviewService).getReviewsForBook("978-316148-4100");
+            Mockito.verify(mockUser, Mockito.times(3)).sendNotification("Reviews for '" + mockBook.getTitle() + "':\n" + String.join("\n", reviews));
+            Mockito.verify(reviewService).close();
+            Assertions.assertTrue(errContent.toString().replace("\r","").contains("Notification failed! Retrying attempt 1/5\n" +
+                    "Notification failed! Retrying attempt 2/5\n"));
+            // Reset err output
+            System.setErr(originalErr);
+        }
+
+        // Check that it works
+        @Test
+        public void GivenValidParametersAndValidReviews_WhenNotifyUserWithBookReviews_ThenReviewsReturned() {
+            library.notifyUserWithBookReviews("978-316148-4100", "123456789876");
+            Mockito.verify(databaseService).getBookByISBN("978-316148-4100");
+            Mockito.verify(databaseService).getUserById("123456789876");
+            Mockito.verify(reviewService).getReviewsForBook("978-316148-4100");
+            Mockito.verify(mockUser).sendNotification("Reviews for '" + mockBook.getTitle() + "':\n" + String.join("\n", reviews));
+            Mockito.verify(reviewService).close();
+        }
+    }
+
+    // TODO fix copy paste error
+    /**
+     * Tests for the getBookByISBN method.
+     */
+    @Nested
+    class GetBookByISBNTests {
+
+        // Tests to verify ISBN is checked before an attempt to get it from DB ************************************************
+
+        @Test
+        public void GivenNull_WhenAddBook_ThenIllegalArgumentException() {
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.addBook(null));
+            Assertions.assertEquals("Invalid book.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).getBookByISBN(Mockito.anyString());
+        }
+
+        @Test
+        public void GivenBookISBNnull_WhenAddBook_ThenIllegalArgumentException() {
+            Mockito.when(mockBook.getISBN()).thenReturn(null);
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.addBook(mockBook));
+            Assertions.assertEquals("Invalid ISBN.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).getBookByISBN(Mockito.anyString());
+        }
+
+        @Test
+        public void GivenBookISBNwithLetters_WhenAddBook_ThenIllegalArgumentException() {
+            Mockito.when(mockBook.getISBN()).thenReturn("978-3-16-148410-0A");
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.addBook(mockBook));
+            Assertions.assertEquals("Invalid ISBN.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).getBookByISBN(Mockito.anyString());
+        }
+
+        @Test
+        public void GivenBookISBNwithSpecialCharacters_WhenAddBook_ThenIllegalArgumentException() {
+            Mockito.when(mockBook.getISBN()).thenReturn("978-3-16-148410-0@");
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.addBook(mockBook));
+            Assertions.assertEquals("Invalid ISBN.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).getBookByISBN(Mockito.anyString());
+        }
+
+        @Test
+        public void GivenBookISBNincorrectCheckSum_WhenAddBook_ThenIllegalArgumentException() {
+            Mockito.when(mockBook.getISBN()).thenReturn("978-3-16-148410-1");
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.addBook(mockBook));
+            Assertions.assertEquals("Invalid ISBN.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).getBookByISBN(Mockito.anyString());
+        }
+
+        @Test
+        public void GivenBookISBNwrongLength_WhenAddBook_ThenIllegalArgumentException() {
+            Mockito.when(mockBook.getISBN()).thenReturn("978-3-16-148410-01");
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.addBook(mockBook));
+            Assertions.assertEquals("Invalid ISBN.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).getBookByISBN(Mockito.anyString());
+        }
+
+        @Test void GivenBookISBNwithNonDigits_WhenAddBook_ThenIllegalArgumentException() {
+            Mockito.when(mockBook.getISBN()).thenReturn("978-3-16-184A10-0");
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.addBook(mockBook));
+            Assertions.assertEquals("Invalid ISBN.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).getBookByISBN(Mockito.anyString());
+        }
+
+        //********************************************************************************************************************
+
+        // Tests to verify user is checked ************************************************************************************
+        @Test
+        public void GivenNullUser_WhenRegisterUser_ThenRaiseIllegalArgumentException() {
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.registerUser(null));
+            Assertions.assertEquals("Invalid user.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).getBookByISBN(Mockito.anyString());
+        }
+
+        @Test
+        public void GivenUserWithNullId_WhenRegisterUser_ThenRaiseIllegalArgumentException() {
+            Mockito.when(mockUser.getId()).thenReturn(null);
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.registerUser(mockUser));
+            Assertions.assertEquals("Invalid user Id.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).getBookByISBN(Mockito.anyString());
+        }
+
+        @Test
+        public void GivenUserWithIncorrectIdLength_WhenRegisterUser_ThenRaiseIllegalArgumentException() {
+
+            // Length 11
+            Mockito.when(mockUser.getId()).thenReturn("12345678987");
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.registerUser(mockUser));
+            Assertions.assertEquals("Invalid user Id.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).getBookByISBN(Mockito.anyString());
+
+            // Length 13
+            Mockito.when(mockUser.getId()).thenReturn("1234567898765");
+            exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.registerUser(mockUser));
+            Assertions.assertEquals("Invalid user Id.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).getBookByISBN(Mockito.anyString());
+        }
+
+        @Test
+        public void GivenUserWithIncorrectIdFormat_WhenRegisterUser_ThenRaiseIllegalArgumentException() {
+
+            // Contains a letter
+            Mockito.when(mockUser.getId()).thenReturn("12345678bBaA");
+            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.registerUser(mockUser));
+            Assertions.assertEquals("Invalid user Id.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).getBookByISBN(Mockito.anyString());
+
+            // Contains a special character
+            Mockito.when(mockUser.getId()).thenReturn("1234567898>?!@");
+            exception = Assertions.assertThrows(IllegalArgumentException.class, () -> library.registerUser(mockUser));
+            Assertions.assertEquals("Invalid user Id.", exception.getMessage());
+            Mockito.verify(databaseService, Mockito.never()).getBookByISBN(Mockito.anyString());
+        }
+
+        //********************************************************************************************************************
+
+        // TODO Book book = databaseService.getBookByISBN(ISBN);
+
+        // ???
+
+    }
 
 }
+
