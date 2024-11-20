@@ -762,13 +762,24 @@ public class TestLibrary {
             Mockito.verify(databaseService).getBookByISBN("978-3-16-148410-0");
         }
 
-//        @Test
-//        public void GivenFaultyNotificationService_WhenGetBookByISBN_ThenNotificationException() {
-//            Mockito.doThrow(NotificationException.class).when(reviewService).sendNotification(Mockito.anyString());
-//            NotificationException exception = Assertions.assertThrows(NotificationException.class, () -> library.getBookByISBN("978-3-16-148410-0", "123456789876"));
-//            Assertions.assertEquals("Notification failed!", exception.getMessage());
-//            Mockito.verify(databaseService).getBookByISBN("978-3-16-148410-0");
-//        }
+        @Test
+        public void GivenFaultyNotificationService_WhenGetBookByISBN_ThenNotificationException() {
+            // Set err output to check the error message
+            ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+            PrintStream originalOut = System.out;
+            System.setOut(new PrintStream(outContent));
+
+            Library spiedLibrary = Mockito.spy(new Library(databaseService, reviewService));
+            Mockito.doThrow(new NotificationException("Notification failed!")).when(spiedLibrary).notifyUserWithBookReviews(Mockito.anyString(), Mockito.anyString());
+
+            Book book = spiedLibrary.getBookByISBN("978-3-16-148410-0", "123456789876");
+            Assertions.assertEquals(mockBook, book);
+            Mockito.verify(databaseService).getBookByISBN("978-3-16-148410-0");
+            Mockito.verify(spiedLibrary).notifyUserWithBookReviews("978-3-16-148410-0", "123456789876");
+            Assertions.assertTrue(outContent.toString().replace("\r","").contains("Notification failed!"));
+            // Reset err output
+            System.setOut(originalOut);
+        }
 
         @Test
         public void GivenAllValidParameters_WhenGetBookByISBN_ThenBookReturned() {
