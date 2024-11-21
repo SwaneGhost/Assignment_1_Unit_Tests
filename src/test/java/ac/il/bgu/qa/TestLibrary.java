@@ -762,23 +762,50 @@ public class TestLibrary {
             Mockito.verify(databaseService).getBookByISBN("978-3-16-148410-0");
         }
 
+
+
+
         @Test
         public void GivenFaultyNotificationService_WhenGetBookByISBN_ThenNotificationException() {
+
             // Set err output to check the error message
+            ByteArrayOutputStream errContent = new ByteArrayOutputStream();
+            PrintStream originalErr = System.err;
+            System.setErr(new PrintStream(errContent));
+
+            // Set out output to check the error message
             ByteArrayOutputStream outContent = new ByteArrayOutputStream();
             PrintStream originalOut = System.out;
             System.setOut(new PrintStream(outContent));
 
-            Library spiedLibrary = Mockito.spy(new Library(databaseService, reviewService));
-            Mockito.doThrow(new NotificationException("Notification failed!")).when(spiedLibrary).notifyUserWithBookReviews(Mockito.anyString(), Mockito.anyString());
+            List<String> reviews = Mockito.spy(new ArrayList<>());
 
-            Book book = spiedLibrary.getBookByISBN("978-3-16-148410-0", "123456789876");
-            Assertions.assertEquals(mockBook, book);
-            Mockito.verify(databaseService).getBookByISBN("978-3-16-148410-0");
-            Mockito.verify(spiedLibrary).notifyUserWithBookReviews("978-3-16-148410-0", "123456789876");
-            Assertions.assertTrue(outContent.toString().replace("\r","").contains("Notification failed!"));
-            // Reset err output
+            Mockito.when(databaseService.getBookByISBN("978-316148-4100")).thenReturn(mockBook);
+            Mockito.when(databaseService.getUserById("123456789876")).thenReturn(mockUser);
+            reviews.add("review1");
+            reviews.add("review2");
+            reviews.add("review3");
+            Mockito.when(reviewService.getReviewsForBook("978-316148-4100")).thenReturn(reviews);
+            Mockito.doThrow(NotificationException.class).when(mockUser).sendNotification(Mockito.anyString());
+
+            //test that when i activate library.getBookByISBN("978-316148-4100", "123456789876") it system.out.prints "Notification failed!"
+            library.getBookByISBN("978-316148-4100", "123456789876");
+            Assertions.assertTrue(outContent.toString().contains("Notification failed!"));
+
+            Mockito.verify(databaseService, Mockito.times(2)).getBookByISBN("978-316148-4100");
+            Mockito.verify(databaseService).getUserById("123456789876");
+            Mockito.verify(reviewService).getReviewsForBook("978-316148-4100");
+            Mockito.verify(mockUser, Mockito.times(5)).sendNotification("Reviews for '" + mockBook.getTitle() + "':\n" + String.join("\n", reviews));
+            Mockito.verify(reviewService).close();
+            Assertions.assertTrue(errContent.toString().replace("\r","").contains("Notification failed! Retrying attempt 1/5\n" +
+                    "Notification failed! Retrying attempt 2/5\n" +
+                    "Notification failed! Retrying attempt 3/5\n" +
+                    "Notification failed! Retrying attempt 4/5\n" +
+                    "Notification failed! Retrying attempt 5/5\n"));
+            // reset outputs
+            System.setErr(originalErr);
             System.setOut(originalOut);
+
         }
 
         @Test
